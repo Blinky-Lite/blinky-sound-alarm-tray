@@ -1,6 +1,6 @@
 [
     {
-        "id": "7cbe116050851432",
+        "id": "ab26446c7f3a82c7",
         "type": "tab",
         "label": "Flow 1",
         "disabled": false,
@@ -47,7 +47,7 @@
                     "edited": false
                 },
                 "page-sidebar-backgroundColor": {
-                    "value": "#000000",
+                    "value": "#333333",
                     "edited": false
                 },
                 "group-textColor": {
@@ -101,5 +101,793 @@
                 "py": 0
             }
         }
+    },
+    {
+        "id": "84d80994.260508",
+        "type": "mqtt-broker",
+        "name": "MQTT Broker",
+        "broker": "$(MQTTSERVERIP)",
+        "port": "$(MQTTPORT)",
+        "clientid": "$(MQTTCLIENTID)",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "birthQos": "0",
+        "birthPayload": "",
+        "birthMsg": {},
+        "closeTopic": "",
+        "closeQos": "0",
+        "closePayload": "",
+        "closeMsg": {},
+        "willTopic": "",
+        "willQos": "0",
+        "willPayload": "",
+        "willMsg": {},
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "08ee1fafdc4c41fc",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Save tray config in Memory",
+        "func": "let tray = msg.payload;\nflow.set('tray', msg.payload);\ntray.trayControl.value = 0;\nreturn {topic: 'setting', payload:{'cube':'trayControl', value:tray.trayControl.value}};\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 940,
+        "y": 420,
+        "wires": [
+            [
+                "e6028ca70b6042d8"
+            ]
+        ]
+    },
+    {
+        "id": "6a3a1d38244800c1",
+        "type": "inject",
+        "z": "ab26446c7f3a82c7",
+        "name": "initFlow",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "1",
+        "topic": "initFlow",
+        "payload": "",
+        "payloadType": "date",
+        "x": 200,
+        "y": 120,
+        "wires": [
+            [
+                "33783d686e432aad"
+            ]
+        ]
+    },
+    {
+        "id": "33783d686e432aad",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Init flow Variables",
+        "func": "var trayProps = {\n    box         :   env.get(\"BOX\"),\n    type        :   env.get(\"TRAYTYPE\"),\n    name        :   env.get(\"TRAYNAME\"),\n};\nflow.set('trayProps',trayProps);\nflow.set('tray', null);\nreturn {topic: \"getTrayProps\", payload: true};  \n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 390,
+        "y": 120,
+        "wires": [
+            [
+                "a1ac9e631b1c38ed",
+                "4d6715a3cd96c25c"
+            ]
+        ]
+    },
+    {
+        "id": "b15d260b572e07f4",
+        "type": "json",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 390,
+        "y": 320,
+        "wires": [
+            [
+                "8fe938b67af54824"
+            ]
+        ]
+    },
+    {
+        "id": "ffa001cd11b3750b",
+        "type": "switch",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "property": "topic",
+        "propertyType": "msg",
+        "rules": [
+            {
+                "t": "eq",
+                "v": "setting",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "ping",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "config",
+                "vt": "str"
+            },
+            {
+                "t": "eq",
+                "v": "echo",
+                "vt": "str"
+            }
+        ],
+        "checkall": "true",
+        "repair": false,
+        "outputs": 4,
+        "x": 730,
+        "y": 320,
+        "wires": [
+            [
+                "b4c6e205db41e3e1"
+            ],
+            [
+                "4cedc086c72eda01"
+            ],
+            [
+                "b3fee75bbe3e5d31"
+            ],
+            [
+                "08ee1fafdc4c41fc"
+            ]
+        ]
+    },
+    {
+        "id": "8fe938b67af54824",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Filter MQTT",
+        "func": "return {topic:msg.topic.split('/')[5], payload:msg.payload};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 550,
+        "y": 320,
+        "wires": [
+            [
+                "ffa001cd11b3750b"
+            ]
+        ]
+    },
+    {
+        "id": "719cafd457722095",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Publish tray",
+        "func": "if (!msg.payload) return null;\nvar tray = flow.get('tray');\nif (tray == null) return null;\nlet newMsg = null;\nlet newMsgTopic = flow.get('trayProps').box + '/tray/' + flow.get('trayProps').type + '/' + flow.get('trayProps').name + '/reading';\nswitch( tray.trayControl.value)\n{\n    case 0:\n        newMsg = {topic: newMsgTopic, payload: JSON.stringify(tray)};\n        break;\n    case -1:\n        tray.trayControl.value = 1;\n        newMsg = {topic: newMsgTopic, payload: JSON.stringify(tray)};\n        break;\n    default:\n        break;\n}\nreturn newMsg;\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1330,
+        "y": 320,
+        "wires": [
+            [
+                "81831015c91a5f28"
+            ]
+        ]
+    },
+    {
+        "id": "b3fee75bbe3e5d31",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Save config file",
+        "func": "let cubeAlarm = flow.get('tray')[msg.payload.cube].alarm;\ncubeAlarm.limits.lolo = msg.payload.limits.lolo;\ncubeAlarm.limits.low  = msg.payload.limits.low;\ncubeAlarm.limits.high = msg.payload.limits.high;\ncubeAlarm.limits.hihi = msg.payload.limits.hihi;\nif (msg.trayConfig.tray[msg.payload.cube].hasOwnProperty('enabled'))\n{\n    if (msg.payload.hasOwnProperty('enabled'))\n    {\n        msg.trayConfig.tray[msg.payload.cube].enabled = msg.payload.enabled;\n    }\n}\nreturn {topic:'newData', payload:true};\n\n",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 380,
+        "wires": [
+            [
+                "8f466a48843f0a7f"
+            ]
+        ]
+    },
+    {
+        "id": "b4c6e205db41e3e1",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Create Setting",
+        "func": "let normalSettingMsg = null;\nlet trayControlMessage = null;\nlet tray = flow.get('tray');\nif (tray == null) return [normalSettingMsg,trayControlMessage];\nif (tray[msg.payload.cube].hasOwnProperty('enabled'))\n{\n    if (tray[msg.payload.cube].enabled == 0 ) [normalSettingMsg,trayControlMessage];\n}\n\nswitch (msg.payload.cube) \n{\n    case 'alias':\n        tray.alias.value = msg.payload.value;\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    case 'trayFilter':\n        tray.trayFilter.value = msg.payload.value;\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    case 'nameFilter':\n        tray.nameFilter.value = msg.payload.value;\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    case 'cubeFilter':\n        tray.cubeFilter.value = msg.payload.value;\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    case 'soundOn':\n        tray.soundOn.value = msg.payload.value;\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    case 'warningSoundOn':\n        tray.warningSoundOn.value = msg.payload.value;\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    case 'trayControl':\n        switch(msg.payload.value)\n        {\n            case 0:\n                tray.trayControl.value = 0;\n                break;\n            case 1:\n                tray.trayControl.value = -1;\n                break;\n            case 2:\n                if (tray.trayControl.value > 0)\n                {\n                    tray.trayControl.value = 2;\n                    let trayProps  = flow.get('trayProps');\n                    node.warn(\"Asking for tray from database\");\n                    trayControlMessage =\n                    {\n                        topic: trayProps.box + '/tray/' + trayProps.type + '/' + trayProps.name + '/echo',\n                        payload: JSON.stringify({ topic: trayProps.box + '/tray/' + trayProps.type + '/' + trayProps.name + '/setting/echo' })\n                    };\n                }\n                break;\n            default:\n                tray.trayControl.value = 0;\n                break;\n        }\n        normalSettingMsg = { topic: 'newData', payload: true };\n       break;\n    default:\n        break;\n}\nflow.set('settingInProgress', false);\nreturn [normalSettingMsg,trayControlMessage];\n\n",
+        "outputs": 2,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 900,
+        "y": 260,
+        "wires": [
+            [
+                "71df6ca08438be25"
+            ],
+            [
+                "6c29d83d29cb0f0b"
+            ]
+        ]
+    },
+    {
+        "id": "461b2f08f5e4f4ba",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Request tray from Database",
+        "func": "let tray = flow.get('tray');\nif (tray != null) return [null,null];\nlet trayProps  = flow.get('trayProps');\nnode.warn(\"Asking for tray from database\");\nvar newMsg =\n{\n    topic: trayProps.box + '/tray/' + trayProps.type + '/' + trayProps.name + '/echo',\n    payload: JSON.stringify({ topic: trayProps.box + '/tray/' + trayProps.type + '/' + trayProps.name + '/setting/echo' })\n};\nreturn [{ topic: \"getTrayProps\", payload: true }, newMsg];  \n",
+        "outputs": 2,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 920,
+        "y": 120,
+        "wires": [
+            [
+                "a91ceff75d960313"
+            ],
+            [
+                "961510dc1e7a036a"
+            ]
+        ]
+    },
+    {
+        "id": "a91ceff75d960313",
+        "type": "delay",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "30",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1160,
+        "y": 120,
+        "wires": [
+            [
+                "0d7a971d3b3d078d"
+            ]
+        ]
+    },
+    {
+        "id": "0d7a971d3b3d078d",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "check for tray defined out",
+        "mode": "link",
+        "links": [
+            "226356ea922f47c6"
+        ],
+        "x": 1265,
+        "y": 60,
+        "wires": []
+    },
+    {
+        "id": "226356ea922f47c6",
+        "type": "link in",
+        "z": "ab26446c7f3a82c7",
+        "name": "check for tray defined in",
+        "links": [
+            "0d7a971d3b3d078d"
+        ],
+        "x": 785,
+        "y": 60,
+        "wires": [
+            [
+                "461b2f08f5e4f4ba"
+            ]
+        ]
+    },
+    {
+        "id": "81831015c91a5f28",
+        "type": "mqtt out",
+        "z": "ab26446c7f3a82c7",
+        "name": "Publish Readings",
+        "topic": "",
+        "qos": "0",
+        "retain": "false",
+        "respTopic": "",
+        "contentType": "",
+        "userProps": "",
+        "correl": "",
+        "expiry": "",
+        "broker": "84d80994.260508",
+        "x": 1510,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "aeb11c4b0eca0c4a",
+        "type": "mqtt in",
+        "z": "ab26446c7f3a82c7",
+        "name": "Subscribe Settings",
+        "topic": "",
+        "qos": "0",
+        "datatype": "auto",
+        "broker": "84d80994.260508",
+        "nl": false,
+        "rap": false,
+        "inputs": 1,
+        "x": 210,
+        "y": 320,
+        "wires": [
+            [
+                "b15d260b572e07f4"
+            ]
+        ]
+    },
+    {
+        "id": "6c29d83d29cb0f0b",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "trayControl Out",
+        "mode": "link",
+        "links": [
+            "f5153c8898e1a608"
+        ],
+        "x": 1115,
+        "y": 300,
+        "wires": []
+    },
+    {
+        "id": "f5153c8898e1a608",
+        "type": "link in",
+        "z": "ab26446c7f3a82c7",
+        "name": "trayControl In",
+        "links": [
+            "6c29d83d29cb0f0b",
+            "961510dc1e7a036a"
+        ],
+        "x": 1395,
+        "y": 260,
+        "wires": [
+            [
+                "81831015c91a5f28"
+            ]
+        ]
+    },
+    {
+        "id": "e90864c178e3c08e",
+        "type": "link in",
+        "z": "ab26446c7f3a82c7",
+        "name": "Publish Tray In",
+        "links": [
+            "bd59ed153526b94a",
+            "71df6ca08438be25",
+            "8f466a48843f0a7f",
+            "bd491678f8e24259",
+            "974629da19a525ea"
+        ],
+        "x": 1215,
+        "y": 320,
+        "wires": [
+            [
+                "719cafd457722095"
+            ]
+        ]
+    },
+    {
+        "id": "71df6ca08438be25",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "create normal setting out",
+        "mode": "link",
+        "links": [
+            "e90864c178e3c08e"
+        ],
+        "x": 1115,
+        "y": 260,
+        "wires": []
+    },
+    {
+        "id": "8f466a48843f0a7f",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "save config out",
+        "mode": "link",
+        "links": [
+            "e90864c178e3c08e"
+        ],
+        "x": 1115,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "bd491678f8e24259",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "ping out",
+        "mode": "link",
+        "links": [
+            "e90864c178e3c08e"
+        ],
+        "x": 1115,
+        "y": 340,
+        "wires": []
+    },
+    {
+        "id": "4cedc086c72eda01",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "prep ping",
+        "func": "return {topic:'newData', payload:true};",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 880,
+        "y": 340,
+        "wires": [
+            [
+                "bd491678f8e24259"
+            ]
+        ]
+    },
+    {
+        "id": "e6028ca70b6042d8",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "save tray config out",
+        "mode": "link",
+        "links": [
+            "21ead1f81b53e80b"
+        ],
+        "x": 1115,
+        "y": 420,
+        "wires": []
+    },
+    {
+        "id": "21ead1f81b53e80b",
+        "type": "link in",
+        "z": "ab26446c7f3a82c7",
+        "name": "setting switch in",
+        "links": [
+            "e6028ca70b6042d8"
+        ],
+        "x": 645,
+        "y": 400,
+        "wires": [
+            [
+                "ffa001cd11b3750b"
+            ]
+        ]
+    },
+    {
+        "id": "961510dc1e7a036a",
+        "type": "link out",
+        "z": "ab26446c7f3a82c7",
+        "name": "reload trays out",
+        "mode": "link",
+        "links": [
+            "f5153c8898e1a608"
+        ],
+        "x": 1105,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "a1ac9e631b1c38ed",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "MQTT subscribe topic",
+        "func": "let subscribeTopic = flow.get('trayProps').box + \"/tray/\" + flow.get('trayProps').type +'/' + flow.get('trayProps').name + \"/setting/#\";\nreturn {action:\"subscribe\",topic:subscribeTopic};",
+        "outputs": 1,
+        "timeout": "",
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 220,
+        "y": 260,
+        "wires": [
+            [
+                "aeb11c4b0eca0c4a"
+            ]
+        ]
+    },
+    {
+        "id": "4d6715a3cd96c25c",
+        "type": "delay",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "2",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 620,
+        "y": 120,
+        "wires": [
+            [
+                "461b2f08f5e4f4ba"
+            ]
+        ]
+    },
+    {
+        "id": "bc4af7f9b27ad1ad",
+        "type": "inject",
+        "z": "ab26446c7f3a82c7",
+        "name": "Init",
+        "props": [
+            {
+                "p": "payload"
+            },
+            {
+                "p": "topic",
+                "vt": "str"
+            }
+        ],
+        "repeat": "",
+        "crontab": "",
+        "once": true,
+        "onceDelay": "2",
+        "topic": "Init",
+        "payload": "",
+        "payloadType": "date",
+        "x": 110,
+        "y": 600,
+        "wires": [
+            [
+                "378596af056f1b50"
+            ]
+        ]
+    },
+    {
+        "id": "378596af056f1b50",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "Hub Alarm  topic",
+        "func": "let subscribeTopic = env.get(\"BOX\") + '/' + env.get(\"HUB\") + \"/alarm/#\";  //Custom\nreturn {action:\"subscribe\",topic:subscribeTopic};\n",
+        "outputs": 1,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 280,
+        "y": 600,
+        "wires": [
+            [
+                "424dc5e8011842cf"
+            ]
+        ]
+    },
+    {
+        "id": "424dc5e8011842cf",
+        "type": "mqtt in",
+        "z": "ab26446c7f3a82c7",
+        "name": "Subscribe to Alarms",
+        "topic": "",
+        "qos": "0",
+        "datatype": "auto-detect",
+        "broker": "84d80994.260508",
+        "nl": false,
+        "rap": false,
+        "inputs": 1,
+        "x": 510,
+        "y": 600,
+        "wires": [
+            [
+                "027b45e00f5d24b2"
+            ]
+        ]
+    },
+    {
+        "id": "027b45e00f5d24b2",
+        "type": "json",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "property": "payload",
+        "action": "obj",
+        "pretty": false,
+        "x": 690,
+        "y": 600,
+        "wires": [
+            [
+                "af57cc4769324c8c"
+            ]
+        ]
+    },
+    {
+        "id": "6ac7efccceed9598",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "parse alarm message",
+        "func": "let tray = flow.get('tray');\nif (tray.soundOn.value == 0) return [null,null];\nlet alertType = msg.payload.content.split(\":\")[0];\nalertType = alertType.split(\"-\")[1];\nlet isAlarmType = false;\nlet isLow = false;\nswitch (alertType)\n{\n    case \"LOLO\":\n        isAlarmType = true;\n        isLow = true;\n        break;\n    case \"LOW\":\n        isAlarmType = false;\n        isLow = true;\n        break;\n    case \"HIGH\":\n        isAlarmType = false;\n        isLow = false;\n        break;\n    case \"HIHI\":\n        isAlarmType = true;\n        isLow = false;\n        break;\n    default:\n        break;\n}\nif (!isAlarmType && tray.warningSoundOn.value == 0) return [null,null];\n\nlet topicSplit = msg.payload.topic.split(\"/\");\nlet trayField = topicSplit[0];\nlet nameField = topicSplit[1];\nlet cubeField = topicSplit[2];\n\nif (tray.trayFilter.value != \"*\")\n{\n    if (tray.trayFilter.value != trayField ) return [null,null];\n}\nif (tray.nameFilter.value != \"*\")\n{\n    if (tray.nameFilter.value != nameField ) return [null,null];\n}\nif (tray.cubeFilter.value != \"*\")\n{\n    if (tray.cubeFilter.value != cubeField ) return [null,null];\n}\nlet filename = \"html-static/warning.wav\";\nif (isAlarmType) filename = \"html-static/alarm.wav\";\nlet espeak = 'high.\"';\nif (isLow) espeak = 'low.\"';\nespeak = '\"' + trayField + ' ' + nameField + ' ' + cubeField + ' is ' + espeak;\nreturn [{topic:'beep',payload:filename},{topic:\"espeak\", payload: espeak}];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1040,
+        "y": 600,
+        "wires": [
+            [
+                "5868b91b7b5eafc5"
+            ],
+            [
+                "e584790c5621cdc0"
+            ]
+        ]
+    },
+    {
+        "id": "4923d01dd1f55458",
+        "type": "speakerpi-output",
+        "z": "ab26446c7f3a82c7",
+        "choose": "filebased",
+        "filename": "test.wav",
+        "channels": "1",
+        "bitdepth": "16",
+        "samplerate": "22050",
+        "name": "",
+        "x": 1700,
+        "y": 600,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "5868b91b7b5eafc5",
+        "type": "file in",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "filename": "payload",
+        "filenameType": "msg",
+        "format": "",
+        "chunk": false,
+        "sendError": false,
+        "encoding": "none",
+        "allProps": false,
+        "x": 1220,
+        "y": 560,
+        "wires": [
+            [
+                "83b06542028eb839"
+            ]
+        ]
+    },
+    {
+        "id": "83b06542028eb839",
+        "type": "function",
+        "z": "ab26446c7f3a82c7",
+        "name": "payload to speech",
+        "func": "msg['speech'] = msg.payload;\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 1430,
+        "y": 600,
+        "wires": [
+            [
+                "4923d01dd1f55458"
+            ]
+        ]
+    },
+    {
+        "id": "9b360668719f5d62",
+        "type": "exec",
+        "z": "ab26446c7f3a82c7",
+        "command": "espeak --stdout ",
+        "addpay": "payload",
+        "append": "",
+        "useSpawn": "false",
+        "timer": "",
+        "winHide": false,
+        "oldrc": false,
+        "name": "Espeak",
+        "x": 1380,
+        "y": 680,
+        "wires": [
+            [
+                "83b06542028eb839"
+            ],
+            [],
+            []
+        ]
+    },
+    {
+        "id": "e584790c5621cdc0",
+        "type": "delay",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "pauseType": "delay",
+        "timeout": "1",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "1",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 1220,
+        "y": 680,
+        "wires": [
+            [
+                "9b360668719f5d62"
+            ]
+        ]
+    },
+    {
+        "id": "af57cc4769324c8c",
+        "type": "delay",
+        "z": "ab26446c7f3a82c7",
+        "name": "",
+        "pauseType": "rate",
+        "timeout": "5",
+        "timeoutUnits": "seconds",
+        "rate": "1",
+        "nbRateUnits": "5",
+        "rateUnits": "second",
+        "randomFirst": "1",
+        "randomLast": "5",
+        "randomUnits": "seconds",
+        "drop": false,
+        "allowrate": false,
+        "outputs": 1,
+        "x": 840,
+        "y": 600,
+        "wires": [
+            [
+                "6ac7efccceed9598"
+            ]
+        ]
     }
 ]

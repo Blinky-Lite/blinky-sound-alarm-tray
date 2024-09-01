@@ -1,4 +1,13 @@
-NODEREDPORT=60427
+BOX=blinky-lite-box-01
+TRAYTYPE=blinky-sound-alarm
+TRAYNAME=01
+MQTTCLIENTID=blinky-sound-alarm-01
+MQTTSERVERIP=192.168.0.8
+MQTTUSERNAME=blinky-lite-box-01
+MQTTPASSWORD=xxxxx
+MQTTPORT=1883
+HUB=blinky-hub
+NODEREDPORT=1880
 HTMLSTATICDIR=html-static/
-NODE_RED_TITLE=node-red
+NODE_RED_TITLE=blinky-sound-alarm-tray
 ENABLE_NODERED_EDITOR=1
